@@ -3,6 +3,7 @@ import { useEditorStore } from '@/stores/editorStore'
 import { useCanvasGestures } from '@/hooks/useCanvasGestures'
 import { ToolRail } from './ToolRail'
 import { BrushCanvas } from './BrushCanvas'
+import { TextBlockLayer } from './TextBlockLayer'
 
 /**
  * Primary canvas workspace using DOM-based layers + CSS transforms.
@@ -117,9 +118,7 @@ function CanvasViewport() {
           )}
 
           {/* Text Block Overlay Layer (DOM-based) */}
-          <div className="absolute inset-0">
-            {/* Text blocks rendered here as positioned divs */}
-          </div>
+          <TextBlockLayer />
 
           {/* Brush Canvas Overlay (only active in brush/eraser mode) */}
           <BrushCanvas width={800} height={1200} />
