@@ -1,13 +1,21 @@
+import { useEffect, useRef } from 'react'
 import { useEditorStore } from '@/stores/editorStore'
+import { useCanvasGestures } from '@/hooks/useCanvasGestures'
 import { ToolRail } from './ToolRail'
+import { BrushCanvas } from './BrushCanvas'
 
 /**
  * Primary canvas workspace using DOM-based layers + CSS transforms.
  * Inspired by Koharu's approach: div transforms + @use-gesture for zoom/pan.
- * Canvas 2D is reserved only for the brush/eraser overlay.
+ * 
+ * Layers (bottom to top):
+ * 1. Original manga page image
+ * 2. Inpainted image overlay
+ * 3. Text block DOM overlay (positioned divs)
+ * 4. Brush canvas (only for brush/eraser mode)
  */
 export function Workspace() {
-  const { pages, currentPageIndex, scale } = useEditorStore()
+  const { pages, currentPageIndex, scale, currentImageUrl } = useEditorStore()
   const currentPage = pages[currentPageIndex]
 
   return (
@@ -17,7 +25,7 @@ export function Workspace() {
 
       {/* Canvas Viewport */}
       <div className="flex-1 relative overflow-hidden">
-        {currentPage ? (
+        {currentPage || currentImageUrl ? (
           <CanvasViewport />
         ) : (
           <EmptyState />
@@ -25,39 +33,96 @@ export function Workspace() {
       </div>
 
       {/* Zoom indicator */}
-      <div className="absolute bottom-3 right-3 rounded bg-black/60 px-2 py-1 text-[10px] text-white">
-        {scale}%
+      <div className="absolute bottom-3 right-3 flex items-center gap-1 rounded bg-black/60 px-2 py-1 text-[10px] text-white select-none">
+        <button
+          onClick={() => useEditorStore.getState().setScale(scale - 10)}
+          className="hover:text-primary px-0.5"
+        >
+          −
+        </button>
+        <span className="min-w-[3ch] text-center">{scale}%</span>
+        <button
+          onClick={() => useEditorStore.getState().setScale(scale + 10)}
+          className="hover:text-primary px-0.5"
+        >
+          +
+        </button>
+        <button
+          onClick={() => useEditorStore.getState().resetView()}
+          className="ml-1 hover:text-primary text-[9px]"
+          title="Reset view (double-click)"
+        >
+          ⟲
+        </button>
       </div>
     </div>
   )
 }
 
 function CanvasViewport() {
-  const { scale } = useEditorStore()
+  const { scale, panX, panY, currentImageUrl, canvasMode } = useEditorStore()
+  const { bind, handleKeyDown, handleKeyUp } = useCanvasGestures()
+  const viewportRef = useRef<HTMLDivElement>(null)
   const scaleRatio = scale / 100
 
+  // Register space key listeners for space+drag panning
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('keyup', handleKeyUp)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keyup', handleKeyUp)
+    }
+  }, [handleKeyDown, handleKeyUp])
+
+  // Cursor based on mode
+  const getCursor = () => {
+    switch (canvasMode) {
+      case 'select': return 'default'
+      case 'block': return 'crosshair'
+      case 'brush': return 'none'
+      case 'eraser': return 'none'
+      default: return 'default'
+    }
+  }
+
   return (
-    <div className="flex h-full w-full items-center justify-center">
+    <div
+      ref={viewportRef}
+      {...bind()}
+      className="flex h-full w-full items-center justify-center touch-none"
+      style={{ cursor: getCursor() }}
+    >
       <div
-        style={{ transform: `scale(${scaleRatio})` }}
-        className="relative transition-transform origin-center"
+        style={{
+          transform: `translate(${panX}px, ${panY}px) scale(${scaleRatio})`,
+          transformOrigin: 'center center',
+          willChange: 'transform',
+        }}
+        className="relative"
       >
         {/* Image Layer */}
         <div className="relative">
-          <div className="w-[800px] h-[1200px] bg-muted rounded flex items-center justify-center">
-            <span className="text-muted-foreground text-sm">Pagina carregada aqui</span>
+          {currentImageUrl ? (
+            <img
+              src={currentImageUrl}
+              alt="Manga page"
+              className="max-w-none select-none pointer-events-none"
+              draggable={false}
+            />
+          ) : (
+            <div className="w-[800px] h-[1200px] bg-muted/20 rounded border border-dashed border-muted-foreground/20 flex items-center justify-center">
+              <span className="text-muted-foreground/50 text-sm">Pagina</span>
+            </div>
+          )}
+
+          {/* Text Block Overlay Layer (DOM-based) */}
+          <div className="absolute inset-0">
+            {/* Text blocks rendered here as positioned divs */}
           </div>
 
-          {/* Text Block Overlay Layer (DOM-based, not canvas) */}
-          <div className="absolute inset-0 pointer-events-none">
-            {/* Text blocks will be rendered as positioned divs */}
-          </div>
-
-          {/* Brush Canvas Overlay (only for inpaint brush tool) */}
-          <canvas
-            className="absolute inset-0 pointer-events-none opacity-50"
-            style={{ display: 'none' }}
-          />
+          {/* Brush Canvas Overlay (only active in brush/eraser mode) */}
+          <BrushCanvas width={800} height={1200} />
         </div>
       </div>
     </div>
@@ -68,11 +133,17 @@ function EmptyState() {
   return (
     <div className="flex h-full flex-col items-center justify-center text-center text-muted-foreground gap-4">
       <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
-        <span className="text-3xl">+</span>
+        <span className="text-3xl opacity-50">📄</span>
       </div>
       <div>
         <p className="text-sm font-medium">Nenhuma pagina aberta</p>
-        <p className="text-xs mt-1">Arraste imagens ou abra um manga da biblioteca</p>
+        <p className="text-xs mt-1 text-muted-foreground/70">
+          Arraste imagens aqui ou abra um manga da biblioteca
+        </p>
+      </div>
+      <div className="text-[10px] text-muted-foreground/50 mt-2 space-y-0.5">
+        <p>Ctrl+Scroll = Zoom | Middle-drag = Pan</p>
+        <p>Double-click = Reset | Ctrl+0 = 100%</p>
       </div>
     </div>
   )

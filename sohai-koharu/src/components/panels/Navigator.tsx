@@ -1,7 +1,18 @@
 import { useEditorStore } from '@/stores/editorStore'
 
 export function Navigator() {
-  const { pages, currentPageIndex, setCurrentPageIndex } = useEditorStore()
+  const { pages, currentPageIndex, setCurrentPageIndex, setCurrentImageUrl } = useEditorStore()
+
+  const handlePageSelect = (index: number) => {
+    setCurrentPageIndex(index)
+
+    // Load the image from the dropped files cache
+    const files = (window as any).__droppedFiles as File[] | undefined
+    if (files && files[index]) {
+      const url = URL.createObjectURL(files[index])
+      setCurrentImageUrl(url)
+    }
+  }
 
   return (
     <div className="flex h-full flex-col bg-card">
@@ -20,30 +31,39 @@ export function Navigator() {
         {pages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
             <p className="text-xs">Nenhuma pagina</p>
-            <p className="text-[10px] mt-1">Importe um manga para comecar</p>
+            <p className="text-[10px] mt-1 opacity-60">Arraste imagens para importar</p>
           </div>
         ) : (
           pages.map((page, index) => (
             <button
               key={page.id}
-              onClick={() => setCurrentPageIndex(index)}
-              className={`w-full rounded-md border p-1 text-left transition-colors ${
+              onClick={() => handlePageSelect(index)}
+              className={`w-full rounded-md border p-1 text-left transition-all ${
                 index === currentPageIndex
-                  ? 'border-primary bg-primary/10'
-                  : 'border-transparent hover:bg-accent'
+                  ? 'border-primary bg-primary/10 ring-1 ring-primary/30'
+                  : 'border-transparent hover:bg-accent hover:border-accent'
               }`}
             >
-              {/* Thumbnail placeholder */}
-              <div className="aspect-[3/4] w-full rounded bg-muted flex items-center justify-center mb-1">
+              {/* Thumbnail */}
+              <div className="aspect-[3/4] w-full rounded bg-muted overflow-hidden mb-1">
                 {page.thumbnailUrl ? (
-                  <img src={page.thumbnailUrl} alt={page.filename} className="w-full h-full object-cover rounded" />
+                  <img
+                    src={page.thumbnailUrl}
+                    alt={page.filename}
+                    className="w-full h-full object-cover"
+                    draggable={false}
+                  />
                 ) : (
-                  <span className="text-lg text-muted-foreground">{index + 1}</span>
+                  <div className="flex items-center justify-center h-full">
+                    <span className="text-lg text-muted-foreground">{index + 1}</span>
+                  </div>
                 )}
               </div>
               {/* Page info */}
               <div className="flex items-center justify-between px-0.5">
-                <span className="text-[10px] truncate flex-1">{page.filename}</span>
+                <span className="text-[10px] truncate flex-1 text-muted-foreground">
+                  {page.filename}
+                </span>
                 <StatusDot status={page.status} />
               </div>
             </button>
@@ -52,11 +72,29 @@ export function Navigator() {
       </div>
 
       {/* Actions */}
-      <div className="border-t p-2">
-        <button className="w-full rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
-          Traduzir Todas
-        </button>
-      </div>
+      {pages.length > 0 && (
+        <div className="border-t p-2 space-y-1">
+          <button className="w-full rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+            ▶ Traduzir Todas
+          </button>
+          <div className="flex gap-1">
+            <button
+              onClick={() => handlePageSelect(Math.max(0, currentPageIndex - 1))}
+              disabled={currentPageIndex === 0}
+              className="flex-1 rounded border px-2 py-1 text-[10px] hover:bg-accent disabled:opacity-30 transition-colors"
+            >
+              ← Anterior
+            </button>
+            <button
+              onClick={() => handlePageSelect(Math.min(pages.length - 1, currentPageIndex + 1))}
+              disabled={currentPageIndex >= pages.length - 1}
+              className="flex-1 rounded border px-2 py-1 text-[10px] hover:bg-accent disabled:opacity-30 transition-colors"
+            >
+              Proxima →
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -71,5 +109,5 @@ function StatusDot({ status }: { status: string }) {
     done: 'bg-green-500',
     error: 'bg-red-500',
   }
-  return <span className={`inline-block w-1.5 h-1.5 rounded-full ${colors[status] || colors.idle}`} />
+  return <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${colors[status] || colors.idle}`} />
 }
