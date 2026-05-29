@@ -79,6 +79,8 @@ export async function translateBatch(
   targetLang = 'pt-BR',
   backend = 'local-llm',
   model = 'qwen3.5-4b',
+  apiKey?: string,
+  context: string[] = [],
 ): Promise<TranslationResult> {
   const resp = await fetch(`${SIDECAR_BASE}/api/translate/batch`, {
     method: 'POST',
@@ -89,6 +91,8 @@ export async function translateBatch(
       target_language: targetLang,
       backend,
       model,
+      api_key: apiKey || undefined,
+      context,
     }),
   })
   if (!resp.ok) throw new Error(`Translation failed: ${resp.status}`)

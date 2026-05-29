@@ -1,6 +1,6 @@
 {
   "name": "sohai-koharu",
-  "version": "0.1.1-alpha",
+  "version": "0.1.2-alpha",
   "private": true,
   "description": "MangaLens 2.0 - ML-powered manga translator with local AI pipeline",
   "scripts": {
