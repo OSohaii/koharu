@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build
+dist/
+dist-ssr/
+*.local
+
+# Tauri
+src-tauri/target/
+
+# Python sidecar
+sidecar/__pycache__/
+sidecar/.venv/
+sidecar/*.pyc
+sidecar/.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env files
+.env
+.env.local
+.env.production
+
+# Models (downloaded on demand - the binary files, not the Python module)
+/models/
+*.onnx
+*.gguf
+*.pt
+*.pth
+
+# Database
+*.db
+*.sqlite
+
+# Logs
+*.log
