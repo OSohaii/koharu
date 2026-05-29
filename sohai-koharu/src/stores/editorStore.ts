@@ -21,12 +21,18 @@ export interface EditorState {
   setCanvasMode: (mode: CanvasMode) => void
   scale: number
   setScale: (scale: number) => void
+  panX: number
+  panY: number
+  setPan: (x: number, y: number) => void
+  resetView: () => void
 
   // Pages
   pages: PageEntry[]
   currentPageIndex: number
+  currentImageUrl: string | null
   setPages: (pages: PageEntry[]) => void
   setCurrentPageIndex: (index: number) => void
+  setCurrentImageUrl: (url: string | null) => void
 
   // Panel visibility
   showNavigator: boolean
@@ -52,12 +58,18 @@ export const useEditorStore = create<EditorState>((set) => ({
   setCanvasMode: (mode) => set({ canvasMode: mode }),
   scale: 100,
   setScale: (scale) => set({ scale: Math.max(10, Math.min(500, scale)) }),
+  panX: 0,
+  panY: 0,
+  setPan: (x, y) => set({ panX: x, panY: y }),
+  resetView: () => set({ scale: 100, panX: 0, panY: 0 }),
 
   // Pages
   pages: [],
   currentPageIndex: 0,
+  currentImageUrl: null,
   setPages: (pages) => set({ pages }),
   setCurrentPageIndex: (index) => set({ currentPageIndex: index }),
+  setCurrentImageUrl: (url) => set({ currentImageUrl: url }),
 
   // Panel visibility
   showNavigator: true,
