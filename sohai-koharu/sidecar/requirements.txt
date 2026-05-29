@@ -1,0 +1,37 @@
+# SohaiKoharu AI Sidecar - Python Dependencies
+# Core API
+fastapi==0.115.12
+uvicorn[standard]==0.34.2
+pydantic==2.11.3
+
+# AI/ML Core
+torch>=2.4.0
+torchvision>=0.19.0
+onnxruntime>=1.19.0
+numpy>=1.26.0
+Pillow>=10.4.0
+opencv-python-headless>=4.10.0
+
+# Detection (YOLO)
+ultralytics>=8.3.0
+
+# OCR
+manga-ocr>=0.1.12
+transformers>=4.45.0
+
+# Inpainting
+# lama-cleaner uses simple-lama-inpainting as lighter alternative
+simple-lama-inpainting>=0.1.0
+
+# Translation - Local LLM
+llama-cpp-python>=0.3.8
+
+# Translation - External APIs
+httpx>=0.28.0
+openai>=1.60.0
+google-genai>=1.16.0
+
+# Utilities
+huggingface-hub>=0.27.0
+safetensors>=0.5.0
+tqdm>=4.67.0
